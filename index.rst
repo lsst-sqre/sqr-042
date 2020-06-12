@@ -76,6 +76,7 @@ It supports Python, JavaScript, Ruby, ``Dockerfile`` files, and GitHub Actions, 
 Every dependency update is sent as a separate PR, so its flood of PRs can feel a bit overwhelming.
 
 Dependabot can handle the PIP frozen requirements files, although it updates each dependency (including transitive dependencies) separately.
+Since frozen dependencies require updating the entire dependency chain, this could potentially result in more than a PR per day per repository.
 
 If packages use the new ``.github/dependabot.yml`` configuration mechanism, Dependabot results are available directly in the GitHub repository UI.
 
@@ -136,36 +137,32 @@ We can also supplement either approach with code we write and maintain ourselves
 
 Renovate is the closest to being the single system that could do everything desired, since it has Kubernetes support.
 It also allows grouping of PRs, which is a major feature, and allows some PRs to be automatically merged.
-However, the lack of support for frozen PIP requirements files is significant, and there is a bug in the handling of Kustomize manifests.
+However, the lack of support for frozen PIP requirements files is a huge gap, since we expect to use that mechanism going forward for all SQuaRE microservices
+There is also a bug in the handling of Kustomize manifests.
 We could contribute that support, but that would require doing significant JavaScript development.
 
-Dependabot is attractive because of the strong GitHub integration and first-party support, and because it handles frozen PIP requirements files (albeit without grouping updates into a single PR, which makes it rather noisy).
+Dependabot is attractive because of the strong GitHub integration and first-party support, and because it handles frozen PIP requirements files.
 It's also very simple to set up and configure.
 Renovate isn't too bad, but it's a bit more complex.
 However, it doesn't support Kubernetes, which is a significant enough gap that we would need to supplement it with our own code.
+Its inability to group updates into a single PR for packages with frozen PIP dependencies is also likely to be overwhelming.
 
-The combination of Dependabot and Renovate covers all of the requirements except for Kustomize resources and pre-commit plugins.
-However, that would mean using Dependabot for Python dependencies for applications with frozen PIP requirements files.
-That's not ideal because of the somewhat spammy separate PRs, but would be workable.
+The combination of Dependabot and Renovate covers all of the types of dependencies except for Kustomize resources, pre-commit plugins.
+However, that would mean using Dependabot for Python dependencies for applications with frozen PIP requirements files and dealing with large numbers of PRs.
 
-Therefore, using Dependabot for Python and GitHub Actions dependencies and Renovate for Kubernetes dependencies seems worthwhile.
+The best approach therefore seems to be to use Dependabot for Python library and GitHub Actions dependencies, Renovate for Kubernetes and Docker dependencies, and custom code for frozen PIP requirements, Kustomize resources, and pre-commit hooks.
 This requires configuring two systems, but we can template the configuration files.
 They shouldn't require much maintenance work.
-We can then choose which of the two systems to use for the other dependencies that both systems support based on how well they handle them.
-Given the current implementations, Renovate is the best choice because of the ability to configure automatic merging and to group multiple updates into a single PR.
+We can choose which of the two systems to use for the dependencies that both systems support based on how well they handle them.
+Given the current implementations, Renovate is the best default choice because of the ability to configure automatic merging and to group multiple updates into a single PR.
 
-That leaves Kustomize and pre-commit dependencies unhandled.
-One option would be to leave them unaddressed.
-Another is to write a Python program to handle those two dependency types, and possibly also teach it to handle frozen PIP requirements files so that they can be merged into a single PR.
-Some of the framework of that program has already been written, although it would be additional work to turn it into a long-running service, add support for those dependency types, and teach it how to manage pending PRs.
-A third option would be to add the missing functionality to Renovate.
-
-Of those options, the most appealing and expedient, consuming the least resources, is:
-
-- Use Dependabot for frozen PIP dependencies and GitHub Actions.
-- Use Renovate for all other dependencies except Kustomize and pre-commit hooks.
-- Leave Kustomize and pre-commit hooks unaddressed for now.
-- Live with multiple PRs for PIP dependency updates for now.
-
+This unfortunately requires us to maintain our own additional code to handle Python applications, Kustomize, and pre-commit dependencies (although we could skip management of pre-commit dependencies without much risk if we wanted to reduce the scope of that code).
+This isn't a desirable option, but the alternatives (very frequent PRs from Dependabot or significant JavaScript development on Renovate) seem worse.
+We can drop that code in the future if Dependabot adds support for batched PRs or Renovate adds better Python and Kustomize support.
 Fixing Kustomize support is probably the easiest Renovate contribution, if we decide to start trying to contribute to the project.
-We will hang on to the framework for doing our own updates, but duplicating the infrastructure to create and track PRs and periodically scan repositories isn't appealing.
+
+Therefore, the recommendation is:
+
+- Use Dependabot for Python library dependencies, GitHub Actions, and other language dependencies Renovate doesn't support.
+- Use Renovate for all other dependencies except Python applications with frozen PIP requirements files, Kustomize resources, and pre-commit hooks.
+- Write our own code to handle Python applications, Kustomize resources, and pre-commit hooks, with an eye to phasing it out if either of the other systems improve.
