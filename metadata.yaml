@@ -39,7 +39,7 @@ copyright: "2020, Association of Universities for Research in Astronomy, Inc. (A
 # Description. A short, 1-2 sentence statemement used by document indices.
 description: >-
   An exploration of options for dependency management for SQuaRE services,
-  and a proposed hybrid approach using dependabot, renovatebot, and
+  and a proposed hybrid approach using Dependabot, WhiteSource Renovate, and
   internally-written software.
 
 # Abstract, if available
