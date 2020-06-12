@@ -5,9 +5,9 @@
 Abstract
 ========
 
-Regularly updating dependencies for SQuaRE services is the highest-impact security intervention.
-It also reduces the operational burden in the long term by making frequent, controlled, incremental updates rather than large and hard-to-debug flag days.
-This document explores options for dependency management and proposes a hybrid system using Dependabot and WhiteSource Renovate.
+Regularly updating dependencies for SQuaRE services is both a high-impact security intervention and a benefit for long-term maintenance.
+It reduces the operational burden of a service by making frequent, controlled, incremental updates rather than large and hard-to-debug flag days.
+This document explores options for dependency management and proposes a hybrid system using Dependabot and WhiteSource Renovate, supplemented with locally-written software.
 
 Problem statement
 =================
